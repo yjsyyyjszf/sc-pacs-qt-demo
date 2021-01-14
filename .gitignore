@@ -1,1 +1,4 @@
+*.sublime-workspace
 build
+.DS_Store
+scripts/sc-pacs-demo.iconset

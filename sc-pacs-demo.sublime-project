@@ -1,0 +1,27 @@
+{
+    "folders":
+    [
+        {
+            "path": ".",
+            "folder_exclude_patterns": ["build", ".DS_Store", "obj-*"],
+            "file_exclude_patterns": ["*.sublime-project", "*.sublime-workspace", "*.o"]
+        }
+    ],
+    "settings": {
+        "rulers": [100],
+    },
+    "build_systems": [{
+        "name": "cmake builder (unix)",
+        "working_dir": "${project_path}/build",
+        "shell": true,
+
+        "linux": {
+            "cmd": ["cmake --build . && ./sc-pacs-demo"]
+        },
+
+        "osx": {
+            "cmd": ["cmake --build . && DYLD_IMAGE_SUFFIX=_debug ./sc-pacs-demo.app/Contents/MacOS/sc-pacs-demo"]
+        }
+
+    }]
+}
