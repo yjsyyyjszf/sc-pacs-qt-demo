@@ -17,7 +17,7 @@ set_property(TARGET Qt5::Core APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS $<$<
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ..)
 set(CMAKE_CXX_FLAGS -I${CMAKE_CURRENT_SOURCE_DIR}/../qpcscxx)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${PROJECT_BINARY_DIR}/qpcscxx -lqpcscxx")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${PROJECT_BINARY_DIR}/qpcscxx")
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
@@ -61,7 +61,7 @@ if(APPLE)
     target_link_libraries(sc-pacs-demo Qt5::Widgets Qt5::Svg Qt5::Xml Qt5::MacExtras)
 endif()
 if(NOT APPLE)
-    target_link_libraries(sc-pacs-demo Qt5::Widgets Qt5::Svg Qt5::Xml)
+    target_link_libraries(sc-pacs-demo Qt5::Widgets Qt5::Svg Qt5::Xml qpcscxx)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

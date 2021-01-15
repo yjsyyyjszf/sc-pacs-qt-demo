@@ -16,7 +16,7 @@
         "shell": true,
 
         "linux": {
-            "cmd": ["cmake --build . && ./sc-pacs-demo"]
+            "cmd": ["VERBOSE=1 cmake --build . && ./sc-pacs-demo"]
         },
 
         "osx": {

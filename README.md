@@ -11,3 +11,8 @@ $ cd build
 $ cmake -DCMAKE_BUILD_TYPE=Debug ..
 $ cmake --build .
 ~~~~
+
+
+## Libraries documentation
+
+pcsc-lite API: <https://pcsclite.apdu.fr/api/group__API.html>
