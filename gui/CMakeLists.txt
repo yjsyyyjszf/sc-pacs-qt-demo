@@ -58,7 +58,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(APPLE)
-    target_link_libraries(sc-pacs-demo Qt5::Widgets Qt5::Svg Qt5::Xml Qt5::MacExtras)
+    target_link_libraries(sc-pacs-demo Qt5::Widgets Qt5::Svg Qt5::Xml Qt5::MacExtras qpcscxx)
 endif()
 if(NOT APPLE)
     target_link_libraries(sc-pacs-demo Qt5::Widgets Qt5::Svg Qt5::Xml qpcscxx)
