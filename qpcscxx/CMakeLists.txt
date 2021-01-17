@@ -14,7 +14,8 @@ set_property(TARGET Qt5::Core APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS $<$<
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(HEADERS qpcscxx.h)
+set(HEADERS pcsc.h
+    qpcscxx.h)
 set(SOURCES pcsc.cpp)
 set(CMAKE_AUTOMOC false)
 
