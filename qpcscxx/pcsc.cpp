@@ -5,13 +5,25 @@
 
 QPCSCXX::Error convert_scard_error(LONG scard_error);
 
+// This struct implements PIMPL pattern and hides SCARDCONTEXT from this library user
+struct QPCSCXX::ContextHandleImpl
+{
+    SCARDCONTEXT sc_context;
+};
+
+// This struct implements PIMPL pattern and hides SCARDHANDLE from this library user
+struct QPCSCXX::CardHandleImpl
+{
+    SCARDHANDLE sc_card;
+};
+
 struct QPCSCXX::Terminal::Private
 {
     bool valid = false;
     QPCSCXX::Error error;
     QString errorString;
     QString name;
-    SCARDHANDLE reader;
+    ContextHandleImplPtr context;
 };
 
 struct QPCSCXX::Context::Private
@@ -22,9 +34,10 @@ struct QPCSCXX::Context::Private
     SCARDCONTEXT sc_context;
 };
 
-struct QPCSCXX::RawContextHandle
+struct QPCSCXX::Card::Private
 {
-    SCARDCONTEXT sc_context;
+    bool valid = false;
+    QPCSCXX::CardHandleImplPtr pc;
 };
 
 QPCSCXX::Terminal::Terminal()
@@ -38,12 +51,13 @@ QPCSCXX::Terminal::Terminal(const Terminal & st)
     *p = *(st.p);
 }
 
-QPCSCXX::Terminal::Terminal(const Context & context, const QString & name)
+QPCSCXX::Terminal::Terminal(const QPCSCXX::ContextHandleImplPtr & context, const QString & name)
 {
     p = new Private;
     p->name = name;
-    auto h = context.handle();
-    qDebug() << "context handle" << h->sc_context;
+    p->context = context;
+    p->valid = true;
+    qDebug() << "context handle" << p->context->sc_context;
 }
 
 QPCSCXX::Terminal::~Terminal()
@@ -56,10 +70,10 @@ QString QPCSCXX::Terminal::name() const
     return p->name;
 }
 
-bool QPCSCXX::Terminal::connect(QPCSCXX::ProtocolType protocol)
+QPCSCXX::Card QPCSCXX::Terminal::connect(QPCSCXX::ProtocolType protocol)
 {
     if (!p->valid) {
-        return false;
+        return QPCSCXX::Card();
     }
     DWORD initial_protocol;
     switch (protocol) {
@@ -78,16 +92,25 @@ bool QPCSCXX::Terminal::connect(QPCSCXX::ProtocolType protocol)
     }
     DWORD active_protocol;
     LONG result;
+    SCARDHANDLE sc_card;
 
-    // result = SCardConnect(p->sc_context, p->name.constData(), SCARD_SHARE_SHARED,
-    //     initial_protocol, &(p->reader), &active_protocol);
-    // if (result != SCARD_S_SUCCESS) {
-    //     p->valid = false;
-    //     p->error = convert_scard_error(result);
-    //     p->errorString = pcsc_stringify_error(result);
-    //     qWarning() << "SCardConnect failed: " << pcsc_stringify_error(result);
-    //     return false;
-    // }
+    result = SCardConnect(p->context->sc_context, p->name.toStdString().c_str(), SCARD_SHARE_SHARED,
+        initial_protocol, &(sc_card), &active_protocol);
+    if (result != SCARD_S_SUCCESS) {
+        p->valid = false;
+        p->error = convert_scard_error(result);
+        p->errorString = pcsc_stringify_error(result);
+        qWarning() << "SCardConnect failed: " << pcsc_stringify_error(result);
+        return QPCSCXX::Card();
+    }
+    QPCSCXX::CardHandleImplPtr h(new QPCSCXX::CardHandleImpl);
+    h->sc_card = sc_card;
+    return QPCSCXX::Card(h);
+}
+
+bool QPCSCXX::Terminal::isValid()
+{
+    return p->valid;
 }
 
 QPCSCXX::Context::Context()
@@ -137,7 +160,7 @@ QList<QPCSCXX::Terminal> QPCSCXX::Context::terminals()
     if (result != SCARD_S_SUCCESS && result != SCARD_E_NO_READERS_AVAILABLE) {
         p->error = convert_scard_error(result);
         p->errorString = pcsc_stringify_error(result);
-        qWarning() << "SCardListReaders failed: " << pcsc_stringify_error(result);;
+        qWarning() << "SCardListReaders failed: " << pcsc_stringify_error(result);
         return ts;
     }
 
@@ -154,19 +177,49 @@ QList<QPCSCXX::Terminal> QPCSCXX::Context::terminals()
 
     const auto rd = readers.data();
     for (int i = 0; i < readers_size - 1; ++i) {
-        QPCSCXX::Terminal t(*this, QString::fromUtf8(&rd[i]));
+        QPCSCXX::Terminal t(handle(), QString::fromUtf8(&rd[i]));
         while (rd[++i] != 0);
         ts << t;
     }
     return ts;
 }
 
-QPCSCXX::RawContextHandlePtr QPCSCXX::Context::handle() const
+QPCSCXX::ContextHandleImplPtr QPCSCXX::Context::handle() const
 {
-    auto h = new RawContextHandle;
+    auto h = new ContextHandleImpl;
     h->sc_context = p->sc_context;
-    return QPCSCXX::RawContextHandlePtr(h);
+    return QPCSCXX::ContextHandleImplPtr(h);
 }
+
+QPCSCXX::Card::Card()
+{
+    p = new Private;
+}
+
+QPCSCXX::Card::Card(const Card & card)
+{
+    p = new Private;
+    *p = *(card.p);
+}
+
+QPCSCXX::Card::Card(const QPCSCXX::CardHandleImplPtr & c)
+{
+    p = new Private;
+    p->pc = c;
+    p->valid = true;
+}
+
+QPCSCXX::Card::~Card()
+{
+    delete p;
+}
+
+bool QPCSCXX::Card::isValid()
+{
+    return p->valid;
+}
+
+
 
 // local functions
 QPCSCXX::Error convert_scard_error(LONG scard_error)
